@@ -33,12 +33,12 @@ var defaultRules = map[string]string{
 }
 
 func main() {
+	var dir string
 	if len(os.Args) < 2 {
-		fmt.Println("uso: go run main.go ./pasta_ofx")
-		return
+		dir = "./ofxs"
+	} else {
+		dir = os.Args[1]
 	}
-
-	dir := os.Args[1]
 
 	db := mustDB()
 	defer db.Close()
@@ -118,12 +118,19 @@ func parseFile(path string, txCh chan<- Tx) {
 
 	resp, _ := ofxgo.ParseResponse(f)
 
-	for _, stmt := range resp.Bank {
-		for _, t := range stmt.Transactions {
+	// todo add Bank processor too?
+	for _, stmt := range resp.CreditCard {
+
+		t := stmt.(*ofxgo.CCStatementResponse).BankTranList
+
+		for _, l := range t.Transactions {
+
+			amount, _ := l.TrnAmt.Rat.Float64()
+
 			txCh <- Tx{
-				Date:        t.DatePosted,
-				Amount:      float64(t.Amount),
-				Description: strings.ToUpper(t.Name),
+				Date:        l.DtPosted.Time,
+				Amount:      amount,
+				Description: strings.ToUpper(string(l.Name)),
 			}
 		}
 	}
