@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  finance-cli:
+    build: .
+    container_name: finance-cli
+
+    # roda só quando você chamar (manual)
+    stdin_open: true
+    tty: true
+
+    volumes:
+      # onde ficam seus .ofx
+      - ./ofx:/data/ofx
+
+      # onde ficam db + planilha + backups
+      - ./data:/data
+
+    working_dir: /data
+
+    # você passa a pasta pro CLI
+    command: ["./ofx"]
